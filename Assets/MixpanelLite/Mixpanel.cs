@@ -6,7 +6,7 @@ namespace MixpanelLite
 {
 	public class Mixpanel : MonoBehaviour 
 	{
-		public string mixpanelProjectToken = ""; 
+		#region Singleton Instance
 
 		private static Mixpanel _instance;
 		static public Mixpanel Instance
@@ -20,6 +20,12 @@ namespace MixpanelLite
 				return _instance;
 			}
 		}
+
+		#endregion
+
+		public string mixpanelProjectToken = ""; 
+		Queue<KeyValuePair<string, string> > EventsQueue = new Queue<KeyValuePair<string, string> >();
+		bool EventsQueueIsProcessing = false;
 
 		string _DistinctIdentifier = "";
 		public string DistinctIdentifier 
@@ -58,8 +64,7 @@ namespace MixpanelLite
 			properties["token"] = mixpanelProjectToken;
 			properties["distinct_id"] = DistinctIdentifier;
 			data["properties"] = properties;
-			
-			HttpEndpoint("track", data);
+			QueueMessage("track", data);
 		}
 
 		public void IdentifySetOnce(Hashtable properties = null)
@@ -88,23 +93,43 @@ namespace MixpanelLite
 			data["$token"] = mixpanelProjectToken;
 			data["$distinct_id"] = DistinctIdentifier;
 			data[operationName] = properties;
-			
-			HttpEndpoint("engage", data);
+			QueueMessage("engage", data);
 		}
 
-		void HttpEndpoint(string endpoint, Hashtable data)
+		public int PendingMessagesCount
 		{
-			string urlTemplate = "https://api.mixpanel.com/{0}/?data={1}";
+			get 
+			{
+				return EventsQueue.Count;
+			}
+		}
+
+		void QueueMessage(string endpoint, Hashtable data)
+		{
 			string json = JSON.JsonEncode(data);
-			string jsonBase64 = System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
-			string url = string.Format(urlTemplate, endpoint, jsonBase64);
-			StartCoroutine(HttpGet (url));
+			EventsQueue.Enqueue(new KeyValuePair<string, string>(endpoint, json));
+			if (!EventsQueueIsProcessing)
+			{
+				StartCoroutine(HandleQueuedMessages());
+			}
 		}
 
-		IEnumerator HttpGet(string url)
+		IEnumerator HandleQueuedMessages()
 		{
-			WWW www = new WWW(url);
-			yield return www; 
+			EventsQueueIsProcessing = true;
+			while (EventsQueue.Count > 0)
+			{
+				KeyValuePair<string, string> EventMessage = EventsQueue.Peek();
+				string urlTemplate = "https://api.mixpanel.com/{0}/?data={1}";
+				string endpoint = EventMessage.Key;
+				string json = EventMessage.Value;
+				string jsonBase64 = System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
+				string url = string.Format(urlTemplate, endpoint, jsonBase64);
+				WWW www = new WWW(url);
+				yield return www;
+				EventsQueue.Dequeue();
+			}
+			EventsQueueIsProcessing = false;
 		}
 
 	}
