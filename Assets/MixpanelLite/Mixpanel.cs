@@ -6,7 +6,7 @@ namespace MixpanelLite
 {
 	public class Mixpanel : MonoBehaviour 
 	{
-		public string token = ""; 
+		public string mixpanelProjectToken = ""; 
 
 		private static Mixpanel _instance;
 		static public Mixpanel Instance
@@ -28,11 +28,11 @@ namespace MixpanelLite
 			{
 				if (string.IsNullOrEmpty(_DistinctIdentifier))
 				{
-					_DistinctIdentifier = PlayerPrefs.GetString(token);
+					_DistinctIdentifier = PlayerPrefs.GetString(mixpanelProjectToken);
 					if (string.IsNullOrEmpty(_DistinctIdentifier))
 					{
 						_DistinctIdentifier = System.Guid.NewGuid().ToString();
-						PlayerPrefs.SetString(token, _DistinctIdentifier);
+						PlayerPrefs.SetString(mixpanelProjectToken, _DistinctIdentifier);
 						PlayerPrefs.Save();
 					}
 				}
@@ -43,7 +43,7 @@ namespace MixpanelLite
 
 		public void Track(string eventName, Hashtable properties = null)
 		{
-			if (string.IsNullOrEmpty(token))
+			if (string.IsNullOrEmpty(mixpanelProjectToken))
 			{
 				return;
 			}
@@ -55,7 +55,7 @@ namespace MixpanelLite
 			{
 				properties = new Hashtable();
 			}
-			properties["token"] = token;
+			properties["token"] = mixpanelProjectToken;
 			properties["distinct_id"] = DistinctIdentifier;
 			data["properties"] = properties;
 			
@@ -79,13 +79,13 @@ namespace MixpanelLite
 
 		void IdentifyUpdate(string operationName, Hashtable properties)
 		{
-			if (string.IsNullOrEmpty(token))
+			if (string.IsNullOrEmpty(mixpanelProjectToken))
 			{
 				return;
 			}
 
 			Hashtable data = new Hashtable();
-			data["$token"] = token;
+			data["$token"] = mixpanelProjectToken;
 			data["$distinct_id"] = DistinctIdentifier;
 			data[operationName] = properties;
 			
@@ -96,7 +96,6 @@ namespace MixpanelLite
 		{
 			string urlTemplate = "https://api.mixpanel.com/{0}/?data={1}";
 			string json = JSON.JsonEncode(data);
-			Debug.Log (json);
 			string jsonBase64 = System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
 			string url = string.Format(urlTemplate, endpoint, jsonBase64);
 			StartCoroutine(HttpGet (url));
