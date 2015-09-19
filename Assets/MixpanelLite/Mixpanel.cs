@@ -96,6 +96,7 @@ namespace MixpanelLite
 		{
 			string urlTemplate = "https://api.mixpanel.com/{0}/?data={1}";
 			string json = JSON.JsonEncode(data);
+			Debug.Log (json);
 			string jsonBase64 = System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
 			string url = string.Format(urlTemplate, endpoint, jsonBase64);
 			StartCoroutine(HttpGet (url));
