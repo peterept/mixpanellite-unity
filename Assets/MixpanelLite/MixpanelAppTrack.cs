@@ -6,7 +6,8 @@ namespace MixpanelLite
 	public class MixpanelAppTrack : MonoBehaviour 
 	{
 		public int AppBuildNumber = 1;
-		float launchedTime;
+		float totalTime;
+		float totalFrames;
 		bool allowQuitting = false;
 
 		void Awake ()
@@ -16,7 +17,6 @@ namespace MixpanelLite
 
 		void Start () 
 		{
-			launchedTime = Time.realtimeSinceStartup;
 			string LaunchDate = System.DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
 			MixpanelLite.Mixpanel.Instance.IdentifySetOnce(new Hashtable(){ 
 				{"First Launched", LaunchDate}
@@ -30,6 +30,12 @@ namespace MixpanelLite
 			MixpanelLite.Mixpanel.Instance.Track("Launched", AppProperties);
 		}
 
+		void Update()
+		{
+			totalTime += Time.unscaledDeltaTime;
+			totalFrames++;
+		}
+
 		void OnApplicationQuit()
 		{
 			if (!allowQuitting)
@@ -37,7 +43,8 @@ namespace MixpanelLite
 				Application.CancelQuit();
 
 				Hashtable props = AppProperties;
-				props.Add ("$duration", (Time.realtimeSinceStartup - launchedTime).ToString("0.0"));
+				props.Add ("$duration", totalTime.ToString("0.0"));
+				props.Add ("FPS", (int)(totalFrames/totalTime));
 				MixpanelLite.Mixpanel.Instance.Track("Exited", props);
 
 				StartCoroutine(ApplicationQuitWhenMixpanelIsDone());
