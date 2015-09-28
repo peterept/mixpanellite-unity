@@ -85,7 +85,8 @@ namespace MixpanelLite
 					{"Device Processor", SystemInfo.processorType},
 					{"Device Memory", SystemInfo.systemMemorySize},
 					{"VR Enabled", UnityEngine.VR.VRSettings.enabled},
-					{"VR HMD", UnityEngine.VR.VRSettings.enabled ? UnityEngine.VR.VRSettings.loadedDevice.ToString() : ""}
+					{"VR HMD", UnityEngine.VR.VRSettings.enabled && UnityEngine.VR.VRDevice.isPresent ? UnityEngine.VR.VRDevice.model : ""},
+					{"VR HMD Family", UnityEngine.VR.VRSettings.enabled && UnityEngine.VR.VRDevice.isPresent ? UnityEngine.VR.VRDevice.family : ""},
 				};
 			}
 
